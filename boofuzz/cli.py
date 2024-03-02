@@ -204,7 +204,7 @@ def fuzz(
     ctx.obj = CliContext(session=session)
 
     # The resultcallback is called after any subcommands, e.g. the one provided by the user
-    @fuzz.resultcallback()
+    @fuzz.result_callback()
     def fuzzcallback(result, *args, **kwargs):
         if feature_check:
             session.feature_check()

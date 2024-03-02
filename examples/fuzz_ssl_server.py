@@ -8,18 +8,18 @@ from boofuzz import *
 
 # If you don't want to verify remote certificate, create a SSLContext.
 # WARNING: You will be vulnerable to a man-in-the-middle attack!
-#   import ssl
-#   ctx = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-#   ctx.check_hostname = False
-#   ctx.verify_mode = ssl.CERT_NONE
+import ssl
+ctx = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
 
 session = Session(
     target=Target(
         connection=SSLSocketConnection(
             host="127.0.0.1",
-            port=443,
+            port=4433,
             server_hostname="example.com",  # Hostname must match the remote certificate
-            # sslcontext=ctx,
+            sslcontext=ctx,
         )
     )
 )

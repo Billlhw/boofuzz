@@ -180,12 +180,17 @@ class DebuggerThreadQemu(threading.Thread):
 
     def run(self):
         self.spawn_target()
+        self.log("review: finished spawn target")
 
         self.finished_starting.set()
+        self.log("review: finished setting finished_starting")
 
         self.exit_status = self.fork_server.wait_for_status()
+        self.log("review: finished setting exit status")
 
         reason = helpers.crash_reason(self.exit_status)
+        self.log("review: finished setting crash reason")
+
 
         msg = "[{0}] Crash. Exit code: {1}. Reason - {2}\n".format(
             time.strftime("%I:%M.%S"), self.exit_status if self.exit_status is not None else "<unknown>", reason

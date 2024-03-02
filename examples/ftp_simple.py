@@ -2,6 +2,7 @@
 """Demo FTP fuzzer as a standalone script."""
 
 from boofuzz import *
+from boofuzz import ProcessMonitor
 
 
 def main():
@@ -9,11 +10,18 @@ def main():
     This example is a very simple FTP fuzzer. It uses no process monitory
     (procmon) and assumes that the FTP server is already running.
     """
-    session = Session(target=Target(connection=TCPSocketConnection("127.0.0.1", 21)))
-
+    # procmon = ProcessMonitor("127.0.0.1", 8021)
+    # target = Target(
+    #     connection = TCPSocketConnection("127.0.0.1", 8021),
+    #     monitors = [procmon]
+    # )
+    # session = Session(target=target)
+    
+    session = Session(target=Target(connection = TCPSocketConnection("127.0.0.1", 8021)))
     define_proto(session=session)
 
-    session.fuzz()
+    #session.fuzz()
+    session.fuzz(qemu=False)
 
 
 def define_proto(session):

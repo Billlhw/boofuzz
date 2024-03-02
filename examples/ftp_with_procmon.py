@@ -15,7 +15,8 @@ def main():
     substitute any FTP server.
     """
     target_ip = "127.0.0.1"
-    start_cmd = ["python", "C:\\ftpd\\ftpd.py"]
+    # start_cmd = ["python", "C:\\ftpd\\ftpd.py"]
+    start_cmd = ["/home/ubuntu/ftp/ftp"]
 
     # initialize the process monitor
     # this assumes that prior to starting boofuzz you started the process monitor
@@ -27,7 +28,7 @@ def main():
     # fmt: off
     session = Session(
         target=Target(
-            connection=TCPSocketConnection(target_ip, 21),
+            connection=TCPSocketConnection(target_ip, 8021),
             monitors=[procmon],
         ),
         sleep_time=1,

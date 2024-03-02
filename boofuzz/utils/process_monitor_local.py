@@ -180,6 +180,7 @@ class ProcessMonitorLocal(BaseMonitor):
         self.log("Stopping target...")
 
         if self._target_is_running():
+            self.log("review: at stopping target")
             self._stop_target()
             self.log("target stopped")
         else:
@@ -197,8 +198,11 @@ class ProcessMonitorLocal(BaseMonitor):
 
     def _stop_target(self):
         # give the debugger thread a chance to exit.
+        self.log("review: stop commands is {0}".format(self.stop_commands))
+
         time.sleep(1)
         if len(self.stop_commands) < 1:
+            self.log("review: stop command is empty")
             self.debugger_thread.stop_target()
             while self.debugger_thread.is_alive():
                 time.sleep(0.1)
@@ -213,6 +217,12 @@ class ProcessMonitorLocal(BaseMonitor):
                     subprocess.Popen(command)
 
     def _target_is_running(self):
+        self.log("at _target_is_running")
+        self.log("var_1 {0}".format(self.debugger_thread is not None))
+        if self.debugger_thread is not None:
+            self.log("var_2 {0}".format(self.debugger_thread.is_alive()))
+        else:
+            self.log("debugger_thread is none")
         return self.debugger_thread is not None and self.debugger_thread.is_alive()
 
     def restart_target(self, **kwargs):

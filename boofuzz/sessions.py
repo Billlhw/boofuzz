@@ -144,6 +144,7 @@ class Target(object):
         self._fuzz_data_logger.log_info("Opening target connection ({0})...".format(self._target_connection.info))
         self._target_connection.open()
         self._fuzz_data_logger.log_info("Connection opened.")
+        self._fuzz_data_logger.log_info("Testing Log.")
 
     def pedrpc_connect(self):
         warnings.warn(
@@ -358,6 +359,7 @@ class WebApp(object):
     def __init__(self, session_info, web_port=constants.DEFAULT_WEB_UI_PORT, web_addr="localhost"):
         self._session_info = session_info
         self._web_interface_thread = self._build_webapp_thread(port=web_port, address=web_addr)
+        #self._fuzz_data_logger.log_info("review_finished_init_webapp") #'WebApp' object has no attribute '_fuzz_data_logger'
         pass
 
     def _build_webapp_thread(self, port, address):
@@ -486,7 +488,8 @@ class Session(pgraph.Graph):
         self.restart_sleep_time = restart_sleep_time
         self.restart_threshold = restart_threshold
         self.restart_timeout = restart_timeout
-        if fuzz_loggers is None:
+
+        if fuzz_loggers is None: #or len(fuzz_loggers) == 0
             fuzz_loggers = []
             if self.console_gui and os.name != "nt":
                 fuzz_loggers.append(fuzz_logger_curses.FuzzLoggerCurses(web_port=self.web_port))
@@ -515,6 +518,7 @@ class Session(pgraph.Graph):
 
         if self.web_port is not None:
             self.web_interface_thread = self.build_webapp_thread(port=self.web_port)
+            self._fuzz_data_logger.log_info("review_in_session_init_finished_init_webapp")
 
         if pre_send_callbacks is None:
             pre_send_methods = []
@@ -571,8 +575,10 @@ class Session(pgraph.Graph):
         self.last_send = None
 
         self.add_node(self.root)
+        self._fuzz_data_logger.log_info("review_in_session_init_finished_add_node")
 
         if target is not None:
+            self._fuzz_data_logger.log_info("review_in_session_init_target_is_not_none")
 
             def apply_options(monitor):
                 monitor.set_options(crash_filename=self._crash_filename)
@@ -580,6 +586,7 @@ class Session(pgraph.Graph):
                 return
 
             target.monitor_alive.append(apply_options)
+            self._fuzz_data_logger.log_info("review_in_session_init_target_applied_options")
 
             try:
                 self.add_target(target)
@@ -1099,6 +1106,7 @@ class Session(pgraph.Graph):
         return data
 
     def transmit_normal(self, sock, node, edge, callback_data, mutation_context):
+        self._fuzz_data_logger.log_info("Review: in transmit_normal")
         """Render and transmit a non-fuzzed node, process callbacks accordingly.
 
         Args:
@@ -1169,6 +1177,8 @@ class Session(pgraph.Graph):
                 raise BoofuzzFailure(str(e))
 
     def transmit_fuzz(self, sock, node, edge, callback_data, mutation_context):
+        self._fuzz_data_logger.log_info("Review: in transmit_fuzz")
+
         """Render and transmit a fuzzed node, process callbacks accordingly.
 
         Args:
@@ -1280,14 +1290,20 @@ class Session(pgraph.Graph):
         Returns:
             None
         """
+        self._fuzz_data_logger.log_info("review_in_fuzz")
+
         self.total_mutant_index = 0
         self.total_num_mutations = self.num_mutations(max_depth=max_depth)
 
         if name is None or name == "":
+            self._fuzz_data_logger.log_info("Review_Name is none or empty")
             if qemu:
+                self._fuzz_data_logger.log_info("Review_Name is none or empty, qemu")
                 self._main_fuzz_loop(self._generate_mutations_feedback(), qemu=qemu)
             else:
+                self._fuzz_data_logger.log_info("Review_Name is none or empty, not qemu")
                 self._main_fuzz_loop(self._generate_mutations_indefinitely(max_depth=max_depth), qemu=qemu)
+
         else:
             self._fuzz_by_name(name=name)
 
@@ -1380,6 +1396,9 @@ class Session(pgraph.Graph):
             raise
 
     def _main_fuzz_loop(self, fuzz_case_iterator, qemu=False):
+        self._fuzz_data_logger.log_info("fuzz_review: In_Main_fuzz_loop")
+        print("In_Main_fuzz_loop_print")
+
         """Execute main fuzz logic; takes an iterator of test cases.
 
         Preconditions: `self.total_mutant_index` and `self.total_num_mutations` are set properly.
@@ -1395,7 +1414,10 @@ class Session(pgraph.Graph):
             self.server_init()
 
         try:
+            print("starting_target")
             self._start_target(self.targets[0])
+            print("finished_starting_target")
+
             shm_map = None
             self.queue_upcoming = []
             global_map = None
@@ -1405,6 +1427,8 @@ class Session(pgraph.Graph):
                     if hasattr(monitor, "debugger_thread"):
                         debugger = monitor.debugger_thread
                         shm_map = debugger.shm_mv
+                        print("UPDATING_SMH_MAP")
+                        print(shm_map)
                 if debugger is None:
                     raise Exception("Fuzzing with qemu mode but no QEMU debugger found")
                 if shm_map is None:
@@ -1416,7 +1440,9 @@ class Session(pgraph.Graph):
             self.num_cases_actually_fuzzed = 0
             self.start_time = time.time()
             for mutation_context in fuzz_case_iterator:
+                print("fuzz_review_in_fuzz_case_iterator")
                 if self.total_mutant_index < self._index_start:
+                    print("fuzz_review_continued")
                     continue
 
                 # Check restart interval
@@ -1425,14 +1451,20 @@ class Session(pgraph.Graph):
                     and self.restart_interval
                     and self.num_cases_actually_fuzzed % self.restart_interval == 0
                 ):
+                    print("fuzz_review_restart_interval_reached")
                     self._fuzz_data_logger.open_test_step("restart interval of %d reached" % self.restart_interval)
                     self._restart_target(self.targets[0])
 
+                print("fuzz_review_fuzzing_current_test_case")
                 self._fuzz_current_case(mutation_context)
+                print("fuzz_review_finished_fuzzing_current_test_case")
 
                 self.num_cases_actually_fuzzed += 1
+                self._fuzz_data_logger.log_info("review_Checking if it is qemu")
+                print("fuzz_review_checking_if_qemu")
 
                 if qemu:
+                    self._fuzz_data_logger.log_info("review_If qemu in main fuzzing loop")
                     case_is_interesting = False
                     for offset in range(0, len(shm_map)):
                         # Check whether any bits set in the current map are not-yet-cleared in the global map:
