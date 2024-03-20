@@ -14,6 +14,7 @@ import warnings
 import zlib
 from builtins import input
 from io import open
+import json
 
 import six
 from tornado.httpserver import HTTPServer
@@ -489,7 +490,7 @@ class Session(pgraph.Graph):
         self.restart_threshold = restart_threshold
         self.restart_timeout = restart_timeout
 
-        if fuzz_loggers is None: #or len(fuzz_loggers) == 0
+        if fuzz_loggers is None or len(fuzz_loggers) == 0: #or len(fuzz_loggers) == 0
             fuzz_loggers = []
             if self.console_gui and os.name != "nt":
                 fuzz_loggers.append(fuzz_logger_curses.FuzzLoggerCurses(web_port=self.web_port))
@@ -1013,7 +1014,7 @@ class Session(pgraph.Graph):
 
     def _stop_targets(self):
         """Attempt to stop stop target(s)."""
-        self._fuzz_data_logger.log_info("Stopping target")
+        self._fuzz_data_logger.log_info("Stopping target at sessions _stop_targets")
         for target in self.targets:
             if target.vmcontrol:
                 self._fuzz_data_logger.log_info("Stopping target virtual machine")
@@ -1290,7 +1291,7 @@ class Session(pgraph.Graph):
         Returns:
             None
         """
-        self._fuzz_data_logger.log_info("review_in_fuzz")
+        self._fuzz_data_logger.log_info("review_in_fuzz, max_depth=" + str(max_depth)) #max_depth=None
 
         self.total_mutant_index = 0
         self.total_num_mutations = self.num_mutations(max_depth=max_depth)
@@ -1305,6 +1306,7 @@ class Session(pgraph.Graph):
                 self._main_fuzz_loop(self._generate_mutations_indefinitely(max_depth=max_depth), qemu=qemu)
 
         else:
+            self._fuzz_data_logger.log_info("Review_Name is not none or empty")
             self._fuzz_by_name(name=name)
 
     def fuzz_by_name(self, name):
@@ -1543,6 +1545,7 @@ class Session(pgraph.Graph):
                 valid_case_found_at_this_depth = True
                 yield m
             if not valid_case_found_at_this_depth:
+                self._fuzz_data_logger.log_info("_generate_mutations_indefinitely_no_valid_case_found_at_depth"+str(depth))
                 break
             depth += 1
 
@@ -1566,9 +1569,15 @@ class Session(pgraph.Graph):
         skip_elements = set()
         if base_mutations is not None:
             skip_elements.update(m.qualified_name for m in base_mutations)
+        
+        self._fuzz_data_logger.log_info("in__generate_n_mutations_for_path_depth"+str(depth))
+        self._fuzz_data_logger.log_info("in__generate_n_mutations_for_path_1_len_path"+str(len(path))) #todo
+        for i in range(0, len(path)):
+            self._fuzz_data_logger.log_info("element_"+str(i)+"path_src " + str(path[0].src) + "path_dst" + str(path[0].dst)) #path is of type connection (defined in sessions.py)
+
         for mutations in self._generate_n_mutations_for_path_recursive(
             path, depth=depth, skip_elements=skip_elements, base_mutations=base_mutations
-        ):
+        ): #todo: modified depth
             if not self._mutations_contain_duplicate(mutations):
                 self.total_mutant_index += 1
                 yield MutationContext(message_path=path, mutations={n.qualified_name: n for n in mutations})
@@ -1584,7 +1593,18 @@ class Session(pgraph.Graph):
         new_skip = skip_elements.copy()
         for mutations in self._generate_mutations_for_request(path=path, skip_elements=skip_elements):
             new_skip.update(m.qualified_name for m in mutations)
+            print("new_skip_type"+str(type(new_skip)))
+            print(new_skip)
+            print("mutations_are")
+            print(mutations)
+            
             for ms in self._generate_n_mutations_for_path_recursive(path, depth=depth - 1, skip_elements=new_skip):
+                print("cur_depth" + str(depth) + ", ms_len" + str(len(ms)))
+                print("len_of_res"+ str(len(base_mutations + mutations + ms)))
+                print("yeilding_res:")
+                res = base_mutations + mutations + ms
+                print(res)
+
                 yield base_mutations + mutations + ms
 
     def _iterate_protocol_message_paths(self, path=None):
@@ -1657,7 +1677,7 @@ class Session(pgraph.Graph):
 
         Args:
             path (list of Connection): Nodes (Requests) along the path to the current one being fuzzed.
-            path (iter of str): Qualified names of elements to skip while fuzzing.
+            path (iter of str): Qualified names of elements to skip while fuzzing. #should be skip_elements
 
         Yields:
             Mutation: Mutation object describing a single mutation.
@@ -1668,6 +1688,7 @@ class Session(pgraph.Graph):
         self.mutant_index = 0
 
         for mutations in self.fuzz_node.get_mutations(skip_elements=skip_elements):
+            self._fuzz_data_logger.log_info("fuzz_node_get_muation_called")
             self.mutant_index += 1
             yield mutations
 

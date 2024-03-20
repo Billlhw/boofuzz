@@ -107,6 +107,7 @@ def fuzz(
     restart_interval,
     target_start_wait,
 ):
+    print("IN CLI.py fuzzing in boofuzz")
     if qemu:
         if platform.system() == "Windows":
             print(
@@ -206,9 +207,11 @@ def fuzz(
     # The resultcallback is called after any subcommands, e.g. the one provided by the user
     @fuzz.result_callback()
     def fuzzcallback(result, *args, **kwargs):
+        print("IN_fuzzcallback")
         if feature_check:
             session.feature_check()
         else:
+            print("IN_fuzzcallback_else")
             session.fuzz(name=test_case_name, max_depth=max_depth, qemu=qemu)
 
 
@@ -240,6 +243,7 @@ def open_file(debug, filename, ui_port, ui_addr):
 
 
 def main():
+    print("IN_MAIN")
     cli()
 
 

@@ -177,13 +177,17 @@ class ProcessMonitorLocal(BaseMonitor):
         """
         Kill the current debugger thread and stop the target process by issuing the commands in self.stop_commands.
         """
-        self.log("Stopping target...")
+        self.log("Stopping target... (in process_monitor_local)")
+        print(self.stop_commands)
+        print("done printing stop commands")
 
         if self._target_is_running():
+            self.log("review: Stopping target when target is running")
             self.log("review: at stopping target")
             self._stop_target()
             self.log("target stopped")
         else:
+            self.log("review: Stopping target when target is already stopped")
             self.log("target already stopped")
 
     def _stop_target_if_running(self):
@@ -207,6 +211,10 @@ class ProcessMonitorLocal(BaseMonitor):
             while self.debugger_thread.is_alive():
                 time.sleep(0.1)
         else:
+            self.log("review: stop command exists")
+            print(self.stop_commands)
+            self.log("review: stop command exists and printed")
+
             for command in self.stop_commands:
                 if command == ["TERMINATE_PID"] or command == "TERMINATE_PID":
                     self.debugger_thread.stop_target()

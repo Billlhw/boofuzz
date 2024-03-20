@@ -129,8 +129,11 @@ class Fuzzable(object):
             list of Mutation: Mutations
 
         """
+        print("fuzzable_py_get_muation_called")
+
         try:
             if not self.fuzzable:
+                print("get_mutations_not_fuzzable")
                 return
             index = 0
             for value in itertools.chain(self.mutations(self.original_value()), self._fuzz_values):
